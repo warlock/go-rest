@@ -140,7 +140,7 @@ func main() {
 
 	e.Static("/static", "assets")
 
-	e.GET("/login", func(c echo.Context) error {
+	e.POST("/login", func(c echo.Context) error {
 		username := c.FormValue("username")
 		password := c.FormValue("password")
 
@@ -193,3 +193,6 @@ func main() {
 	*/
 
 }
+
+// curl -X POST -d "username=josep" -d "password=ssh" http://localost:8080/login
+// curl http://localhost:8080/restricted -H 'Authorization: Bearer TOKENNNNN'
