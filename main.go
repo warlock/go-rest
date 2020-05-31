@@ -3,7 +3,9 @@ package main
 import (
 	"net/http"
 	"strconv"
+	"time"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
@@ -12,6 +14,12 @@ import (
 type User struct {
 	Name  string `json:"name" xml:"name"`
 	Email string `json:"email" xml:"email"`
+}
+
+type jwtCustomClaims struct {
+	Name  string `json:"name"`
+	Admin bool   `json:"admin"`
+	jwt.StandardClaims
 }
 
 func main() {
@@ -31,6 +39,15 @@ func main() {
 			}
 
 			e.Use(middleware.LoggerWithConfig(logConfig))
+	*/
+
+	e.Use(middleware.CORS())
+
+	/*
+			e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		  AllowOrigins: []string{"https://labstack.com", "https://labstack.net"},
+		  AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
+		}))
 	*/
 
 	e.Use(middleware.Logger())
@@ -122,6 +139,44 @@ func main() {
 	})
 
 	e.Static("/static", "assets")
+
+	e.GET("/login", func(c echo.Context) error {
+		username := c.FormValue("username")
+		password := c.FormValue("password")
+
+		if username != "josep" && password != "shh" {
+			return c.String(http.StatusOK, "No no")
+		}
+
+		claims := &jwtCustomClaims{
+			"Josep",
+			true,
+			jwt.StandardClaims{
+				ExpiresAt: time.Now().Add(time.Hour * 72).Unix(),
+			},
+		}
+		token := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
+		t, err := token.SignedString([]byte("secret"))
+		if err != nil {
+			return err
+		}
+		return c.JSON(http.StatusOK, echo.Map{
+			"token": t,
+		})
+
+	})
+
+	e.Use(middleware.JWTWithConfig(middleware.JWTConfig{
+		SigningKey:  []byte("secretpass"),
+		TokenLookup: "header:Authorization",
+	}))
+
+	e.GET("/restricted", func(c echo.Context) error {
+		user := c.Get("user").(*jwt.Token)
+		claims := user.Claims.(*jwtCustomClaims)
+		name := claims.Name
+		return c.String(http.StatusOK, "Hello Secure: "+name+" !!")
+	})
 
 	e.Start(":8080")
 
