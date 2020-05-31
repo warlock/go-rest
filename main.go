@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -17,20 +18,26 @@ func main() {
 	e := echo.New()
 
 	/*
-		myLog, err := os.OpenFile("logs.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-		if err != nil {
-			log.Fatalf("No es pot llegir el document: %v", err)
-		}
-		defer myLog.Close()
+		// Login personalitzat
+			myLog, err := os.OpenFile("logs.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+			if err != nil {
+				log.Fatalf("No es pot llegir el document: %v", err)
+			}
+			defer myLog.Close()
 
-		logConfig := middleware.LoggerConfig {
-			Output: myLog,
-			Format: "method=${method}, uri=${uri}, status=${status}\n"
-		}
+			logConfig := middleware.LoggerConfig {
+				Output: myLog,
+				Format: "method=${method}, uri=${uri}, status=${status}\n"
+			}
 
-		e.Use(middleware.LoggerWithConfig(logConfig))
+			e.Use(middleware.LoggerWithConfig(logConfig))
 	*/
+
 	e.Use(middleware.Logger())
+
+	// Reinicia en cas de que faci un panic
+	e.Use(middleware.Recover())
+
 	// Redireccio https
 	//e.Pre(middleware.HTTPSRedirect())
 
@@ -98,16 +105,21 @@ func main() {
 		return c.XML(http.StatusOK, u)
 	})
 
-	/*
-		e.GET("/name/:name", func(c echo.Context) error {
-			p := c.Param("name")
-			if p != nil {
-				return c.String(http.StatusOK, "Hello %s")
+	e.GET("/name/:name", func(c echo.Context) error {
+		p := c.Param("name")
+		if p != "" {
+			return c.String(http.StatusOK, "Hello")
 
-			}
-			return c.String(http.StatusOK, "Hello world")
-		})
-	*/
+		}
+		return c.String(http.StatusOK, "Hello world")
+	})
+
+	e.GET("/operacio", func(c echo.Context) error {
+		d := c.QueryParam("d")
+		f, _ := strconv.Atoi(d)
+		a := 25000 / f
+		return c.String(http.StatusOK, strconv.Itoa(a))
+	})
 
 	e.Static("/static", "assets")
 
