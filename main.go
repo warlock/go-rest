@@ -16,7 +16,23 @@ type User struct {
 func main() {
 	e := echo.New()
 
+	/*
+		myLog, err := os.OpenFile("logs.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+		if err != nil {
+			log.Fatalf("No es pot llegir el document: %v", err)
+		}
+		defer myLog.Close()
+
+		logConfig := middleware.LoggerConfig {
+			Output: myLog,
+			Format: "method=${method}, uri=${uri}, status=${status}\n"
+		}
+
+		e.Use(middleware.LoggerWithConfig(logConfig))
+	*/
 	e.Use(middleware.Logger())
+	// Redireccio https
+	//e.Pre(middleware.HTTPSRedirect())
 
 	e.File("/favicon.ico", "images/favicon.ico")
 
@@ -48,6 +64,10 @@ func main() {
 
 	e.GET("redirect", func(c echo.Context) error {
 		return c.Redirect(http.StatusMovedPermanently, "http://girona.dev")
+	})
+
+	e.GET("redirect2", func(c echo.Context) error {
+		return c.Redirect(http.StatusMovedPermanently, "/json")
 	})
 
 	e.GET("/json", func(c echo.Context) error {
@@ -94,9 +114,15 @@ func main() {
 	e.Start(":8080")
 
 	/*
-	   e.Logger.Fatal(
-	   	e.StartTLS(":443", "./cert/cert.pem","./cert/key.key")
-	   )
+		   e.Logger.Fatal(
+		   	e.StartTLS(":443", "./cert/cert.pem","./cert/key.key")
+			 )
+
+			 go func () {
+				 e.Logger.Fatal(
+					 e.Start(":80")
+				 )
+			 }
 	*/
 
 }
